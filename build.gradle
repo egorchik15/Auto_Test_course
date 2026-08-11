@@ -13,8 +13,23 @@ dependencies {
     testImplementation platform('org.junit:junit-bom:6.0.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testImplementation 'org.assertj:assertj-core:3.27.3'
 }
 
 test {
     useJUnitPlatform()
+}
+
+tasks.register('runAllTests') {
+    dependsOn test
+    doLast {
+        println 'All tests have been executed'
+    }
+}
+
+tasks.register('testRunIsOver') {
+    dependsOn 'runAllTests'
+    doLast {
+        println 'Test run is over'
+    }
 }
