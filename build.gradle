@@ -33,3 +33,15 @@ tasks.register('testRunIsOver') {
         println 'Test run is over'
     }
 }
+
+tasks.register('homework3Tests', Test) {
+    group = 'my_tests'
+    description = 'Run only tests with tag homework3'
+
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    useJUnitPlatform {
+        includeTags 'homework3'
+    }
+}
