@@ -14,6 +14,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.assertj:assertj-core:3.27.3'
+    implementation("io.rest-assured:rest-assured:5.5.6")
 }
 
 test {
@@ -41,7 +42,25 @@ tasks.register('homework3Tests', Test) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
 
+    outputs.upToDateWhen { false }
+
     useJUnitPlatform {
         includeTags 'homework3'
+    }
+}
+
+tasks.register('apiTests', Test) {
+    group = 'my_tests'
+    description = 'Run only API tests'
+
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+
+    outputs.upToDateWhen { false }
+
+    useJUnitPlatform {
+        // Запускаем только классы API-тестов
+        include '**/GoodsApiTest.class'
+        include '**/GoodsApiFullTest.class'
     }
 }
