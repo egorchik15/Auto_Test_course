@@ -1,13 +1,17 @@
 import com.codeborne.selenide.Configuration;
+import config.TestConfig;
 import org.junit.jupiter.api.BeforeAll;
 
 public class BaseUITest {
 
     @BeforeAll
     static void setUpAll() {
-        Configuration.baseUrl = "http://localhost:8080";
+        // 1. Печатаем конфиг перед запуском (без credentials)
+        TestConfig.printConfig();
+
+        // 2. Применяем параметры из конфига
+        Configuration.baseUrl = TestConfig.getUiBaseUrl();
+        Configuration.timeout = TestConfig.getTimeout();
         Configuration.browser = "chrome";
-        Configuration.timeout = 5000;
-        Configuration.holdBrowserOpen = false;
     }
 }
