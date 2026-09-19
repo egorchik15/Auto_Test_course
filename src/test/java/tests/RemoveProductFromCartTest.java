@@ -1,4 +1,7 @@
+package tests;
+
 import org.junit.jupiter.api.Test;
+
 import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.CollectionCondition.*;
 import static com.codeborne.selenide.Selenide.*;

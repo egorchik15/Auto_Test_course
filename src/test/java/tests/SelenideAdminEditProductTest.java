@@ -1,6 +1,8 @@
-import io.restassured.http.ContentType;
+package tests;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+
 import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selenide.*;
 import static io.restassured.RestAssured.given;
