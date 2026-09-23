@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'io.qameta.allure' version '3.2.0'
 }
 
 group = 'org.example'
@@ -17,10 +18,28 @@ dependencies {
     implementation("io.rest-assured:rest-assured:5.5.6")
     implementation("org.seleniumhq.selenium:selenium-java:4.40.0")
     implementation 'com.codeborne:selenide:7.6.1'
+    testImplementation 'io.qameta.allure:allure-junit5:2.29.0'
+    testImplementation 'io.qameta.allure:allure-rest-assured:2.29.0'
+    testImplementation 'io.qameta.allure:allure-selenide:2.29.0'
+    testImplementation 'org.aspectj:aspectjweaver:1.9.25'
+}
+
+allure {
+    adapter {
+        autoconfigure = true
+        aspectjWeaver = true
+        aspectjVersion = '1.9.25'   // если свойство поддерживается плагином
+    }
 }
 
 test {
     useJUnitPlatform()
+    systemProperty 'allure.results.directory', 'build/allure-results'
+
+    // на всякий случай явно прокидываем javaagent
+    doFirst {
+        jvmArgs "-javaagent:${configurations.testRuntimeClasspath.find { it.name.contains('aspectjweaver') }}"
+    }
 }
 
 tasks.register('runAllTests') {

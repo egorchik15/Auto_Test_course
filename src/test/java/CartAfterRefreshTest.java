@@ -1,3 +1,4 @@
+import io.qameta.allure.Step;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ public class CartAfterRefreshTest {
     void setUp() {
         driver = new ChromeDriver();
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
-        driver.get("http://localhost:8080/");
+        openStore();
     }
 
     @AfterEach
@@ -29,48 +30,60 @@ public class CartAfterRefreshTest {
 
     @Test
     void cartShouldKeepProductsAfterRefresh() {
-        // 1. Берём первый товар на витрине
+        String productName = getFirstProductName();
+        addFirstProductToCart();
+        openCart();
+        checkProductInCart(productName, "До обновления страницы");
+
+        refreshPage();
+        openCart();
+        checkProductInCart(productName, "После обновления страницы");
+    }
+
+    // ===================== UI steps =====================
+
+    @Step("UI: открыть витрину")
+    private void openStore() {
+        driver.get("http://localhost:8080/");
+    }
+
+    @Step("UI: получить название первого товара")
+    private String getFirstProductName() {
         WebElement firstCard = driver.findElement(By.cssSelector("#products-list .product-card"));
-        String productName = firstCard.findElement(By.cssSelector("h4")).getText();
+        return firstCard.findElement(By.cssSelector("h4")).getText();
+    }
 
-        // 2. Добавляем товар в корзину
+    @Step("UI: добавить первый товар в корзину")
+    private void addFirstProductToCart() {
+        WebElement firstCard = driver.findElement(By.cssSelector("#products-list .product-card"));
         firstCard.findElement(By.cssSelector("button[data-action='add-to-cart']")).click();
+    }
 
-        // 3. Открываем корзину
+    @Step("UI: открыть корзину")
+    private void openCart() {
         driver.findElement(By.id("open-cart-btn")).click();
+    }
 
-        // 4. Проверяем, что товар есть до refresh
-        List<WebElement> cartBefore = driver.findElements(By.cssSelector("#cart-items .cart-item"));
-        boolean foundBefore = false;
-        for (WebElement item : cartBefore) {
-            if (item.getText().contains(productName)) {
-                foundBefore = true;
-                break;
-            }
-        }
-
-        assertThat(foundBefore)
-                .as("До обновления страницы товар '" + productName + "' должен быть в корзине")
-                .isTrue();
-
-        // 5. Обновляем страницу
+    @Step("UI: обновить страницу")
+    private void refreshPage() {
         driver.navigate().refresh();
+    }
 
-        // 6. Снова открываем корзину
-        driver.findElement(By.id("open-cart-btn")).click();
+    // ===================== UI checks =====================
 
-        // 7. Проверяем, что товар остался после refresh
-        List<WebElement> cartAfter = driver.findElements(By.cssSelector("#cart-items .cart-item"));
-        boolean foundAfter = false;
-        for (WebElement item : cartAfter) {
+    @Step("UI-проверка: товар '{productName}' есть в корзине ({stage})")
+    private void checkProductInCart(String productName, String stage) {
+        List<WebElement> cartItems = driver.findElements(By.cssSelector("#cart-items .cart-item"));
+        boolean found = false;
+        for (WebElement item : cartItems) {
             if (item.getText().contains(productName)) {
-                foundAfter = true;
+                found = true;
                 break;
             }
         }
 
-        assertThat(foundAfter)
-                .as("После обновления страницы товар '" + productName + "' должен сохраниться в корзине")
+        assertThat(found)
+                .as(stage + " товар '" + productName + "' должен быть в корзине")
                 .isTrue();
     }
 }

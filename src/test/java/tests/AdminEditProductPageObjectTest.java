@@ -3,9 +3,12 @@ package tests;
 import asserts.AdminAssert;
 import asserts.StoreAssert;
 import config.TestConfig;
+import io.qameta.allure.Step;
+import io.qameta.allure.restassured.AllureRestAssured;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import pages.LoginPage;
+
 import static io.restassured.RestAssured.given;
 
 public class AdminEditProductPageObjectTest extends BaseUITest {
@@ -36,11 +39,20 @@ public class AdminEditProductPageObjectTest extends BaseUITest {
     @AfterEach
     void cleanup() {
         if (productId != null) {
-            given()
-                    .auth().basic(TestConfig.getUsername(), TestConfig.getPassword())
-                    .pathParam("id", productId)
-                    .when()
-                    .delete(TestConfig.getApiBaseUrl() + "/goods/{id}");
+            deleteGoodsById(productId);
+            productId = null;
         }
+    }
+
+    @Step("API: удалить товар id={id}")
+    private void deleteGoodsById(String id) {
+        given()
+                .filter(new AllureRestAssured())
+                .auth().basic(TestConfig.getUsername(), TestConfig.getPassword())
+                .pathParam("id", id)
+                .when()
+                .delete(TestConfig.getApiBaseUrl() + "/goods/{id}")
+                .then()
+                .statusCode(200);
     }
 }

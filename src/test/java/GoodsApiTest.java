@@ -1,18 +1,14 @@
+import io.qameta.allure.Step;
+import io.qameta.allure.restassured.AllureRestAssured;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
+import java.util.List;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.*;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.TestMethodOrder;
-import io.restassured.response.Response;
-import org.junit.jupiter.api.BeforeEach;
-import java.util.List;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class GoodsApiTest {
@@ -24,136 +20,147 @@ public class GoodsApiTest {
 
     @BeforeEach
     void clearGoods() {
-        // 1. Получаем текущий список
-        Response response = given()
-                .auth().basic("admin", "secret123")
-                .queryParam("page", 0)
-                .queryParam("size", 100)
-                .when()
-                .get("/goods/list")
-                .then()
-                .statusCode(200)
-                .extract().response();
-
-        List<Integer> ids = response.jsonPath().getList("goods.id");
-
-        // 2. Если список не пустой — удаляем каждый товар
+        List<Integer> ids = getAllGoodsIds();
         if (ids != null) {
             for (Integer id : ids) {
-                given()
-                        .auth().basic("admin", "secret123")
-                        .pathParam("id", id)
-                        .when()
-                        .delete("/goods/{id}")
-                        .then()
-                        .statusCode(200);
+                deleteGoodsById(id);
             }
         }
     }
 
-    @Test
-    @Order(1)
-    void testGetGoodsListWithGivenWhenThen() {
-        given()
+    // ===================== API steps =====================
+
+    @Step("API: получить список товаров")
+    private Response getGoodsList(int page, int size) {
+        return given()
+                .filter(new AllureRestAssured())
                 .auth().basic("admin", "secret123")
-                .queryParam("page", 0)
-                .queryParam("size", 10)
+                .queryParam("page", page)
+                .queryParam("size", size)
                 .when()
                 .get("/goods/list")
                 .then()
-                .log().all()
-                .statusCode(200)
-                .body("goods", empty());   // тело — пустой список
+                .extract().response();
+    }
+
+    @Step("API: создать товар name={name}, price={price}")
+    private Response createGoods(String name, double price) {
+        String body = """
+                {
+                  "name": "%s",
+                  "price": %s
+                }
+                """.formatted(name, price);
+
+        return given()
+                .filter(new AllureRestAssured())
+                .auth().basic("admin", "secret123")
+                .contentType(ContentType.JSON)
+                .body(body)
+                .when()
+                .post("/goods/add")
+                .then()
+                .extract().response();
+    }
+
+    @Step("API: удалить товар id={id}")
+    private void deleteGoodsById(int id) {
+        given()
+                .filter(new AllureRestAssured())
+                .auth().basic("admin", "secret123")
+                .pathParam("id", id)
+                .when()
+                .delete("/goods/{id}")
+                .then()
+                .statusCode(200);
+    }
+
+    @Step("API: получить id всех товаров")
+    private List<Integer> getAllGoodsIds() {
+        Response response = getGoodsList(0, 100);
+        checkStatusCode(response, 200);
+        return response.jsonPath().getList("goods.id ");
+    }
+
+    // ===================== API checks =====================
+
+    @Step("API-проверка: статус-код = {expectedStatus}")
+    private void checkStatusCode(Response response, int expectedStatus) {
+        response.then().statusCode(expectedStatus);
+    }
+
+    @Step("API-проверка: список goods пустой")
+    private void checkGoodsListIsEmpty(Response response) {
+        response.then().body("goods", empty());
+    }
+
+    @Step("API-проверка: список содержит товар '{name}'")
+    private void checkGoodsListContainsName(Response response, String name) {
+        response.then().body("goods.name", hasItem(name));
+    }
+
+    @Step("API-проверка (AssertJ): список содержит товар '{name}'")
+    private void checkGoodsListContainsNameAssertJ(Response response, String name) {
+        assertThat(response.jsonPath().getList("goods.name"))
+                .as("Список должен содержать созданный товар")
+                .contains(name);
+    }
+
+    // ===================== Tests =====================
+
+    @Test
+    @Order(1)
+    void testGetGoodsListWithGivenWhenThen() {
+        Response response = getGoodsList(0, 10);
+        response.then().log().all();
+        checkStatusCode(response, 200);
+        checkGoodsListIsEmpty(response);
     }
 
     @Test
     @Order(2)
     void testGetGoodsListWithRequestSpecification() {
         RequestSpecification request = given()
+                .filter(new AllureRestAssured())
                 .auth().basic("admin", "secret123")
                 .queryParam("page", 0)
                 .queryParam("size", 10)
                 .contentType(ContentType.JSON);
 
-        request
+        Response response = request
                 .when()
                 .get("/goods/list")
                 .then()
                 .log().all()
-                .statusCode(200)
-                .body("goods", empty());
+                .extract().response();
+
+        checkStatusCode(response, 200);
+        checkGoodsListIsEmpty(response);
     }
 
     @Test
     @Order(3)
     void testCreateGoodsAndCheckWithRestAssured() {
-        String body = """
-            {
-              "name": "Test Product RA",
-              "price": 99.99
-            }
-            """;
+        Response createResponse = createGoods("Test Product RA", 99.99);
+        createResponse.then().log().all();
+        checkStatusCode(createResponse, 200);
 
-        // 1. Создаём товар
-        given()
-                .auth().basic("admin", "secret123")
-                .contentType(ContentType.JSON)
-                .body(body)
-                .when()
-                .post("/goods/add")
-                .then()
-                .log().all()
-                .statusCode(200);
-
-        // 2. Проверяем, что товар есть в списке
-        given()
-                .auth().basic("admin", "secret123")
-                .queryParam("page", 0)
-                .queryParam("size", 50)
-                .when()
-                .get("/goods/list")
-                .then()
-                .log().all()
-                .statusCode(200)
-                .body("goods.name", hasItem("Test Product RA"));
+        Response listResponse = getGoodsList(0, 50);
+        listResponse.then().log().all();
+        checkStatusCode(listResponse, 200);
+        checkGoodsListContainsName(listResponse, "Test Product RA");
     }
 
     @Test
     @Order(4)
     void testCreateGoodsAndCheckWithAssertJ() {
-        String body = """
-            {
-              "name": "Test Product AssertJ",
-              "price": 149.50
-            }
-            """;
+        Response createResponse = createGoods("Test Product AssertJ", 149.50);
+        createResponse.then().log().all();
+        checkStatusCode(createResponse, 200);
 
-        // 1. Создаём товар
-        given()
-                .auth().basic("admin", "secret123")
-                .contentType(ContentType.JSON)
-                .body(body)
-                .when()
-                .post("/goods/add")
-                .then()
-                .log().all()
-                .statusCode(200);
-
-        // 2. Получаем список
-        Response response = given()
-                .auth().basic("admin", "secret123")
-                .queryParam("page", 0)
-                .queryParam("size", 50)
-                .when()
-                .get("/goods/list")
-                .then()
-                .log().all()
-                .statusCode(200)
-                .extract().response();
-
-        // 3. Проверяем через AssertJ
-        assertThat(response.jsonPath().getList("goods.name"))
-                .as("Список должен содержать созданный товар")
-                .contains("Test Product AssertJ");
+        Response listResponse = getGoodsList(0, 50);
+        listResponse.then().log().all();
+        checkStatusCode(listResponse, 200);
+        checkGoodsListContainsNameAssertJ(listResponse, "Test Product AssertJ");
     }
 }

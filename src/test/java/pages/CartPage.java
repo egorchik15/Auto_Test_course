@@ -3,6 +3,7 @@ package pages;
 import com.codeborne.selenide.ElementsCollection;
 import com.codeborne.selenide.SelenideElement;
 import static com.codeborne.selenide.Selenide.*;
+import io.qameta.allure.Step;
 
 public class CartPage {
 
@@ -27,6 +28,7 @@ public class CartPage {
         return toast;
     }
 
+    @Step("Удалить товар '{name}' из корзины")
     public CartPage removeProduct(String name) {
         cartItems.findBy(com.codeborne.selenide.Condition.text(name))
                 .$("[data-action='remove']")
@@ -34,6 +36,7 @@ public class CartPage {
         return this;
     }
 
+    @Step("Нажать кнопку «Оформить заказ»")
     public CartPage makeOrder() {
         makeOrderButton.click();
         return this;

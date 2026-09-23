@@ -3,6 +3,8 @@ package tests;
 import com.codeborne.selenide.Configuration;
 import config.TestConfig;
 import org.junit.jupiter.api.BeforeAll;
+import com.codeborne.selenide.logevents.SelenideLogger;
+import io.qameta.allure.selenide.AllureSelenide;
 
 public class BaseUITest {
 
@@ -15,5 +17,13 @@ public class BaseUITest {
         Configuration.baseUrl = TestConfig.getUiBaseUrl();
         Configuration.timeout = TestConfig.getTimeout();
         Configuration.browser = "chrome";
+
+        // ===== Allure Selenide Listener =====
+        SelenideLogger.addListener(
+                "AllureSelenide",
+                new AllureSelenide()
+                        .screenshots(true)
+                        .savePageSource(true)
+        );
     }
 }

@@ -1,5 +1,6 @@
 package tests;
 
+import io.qameta.allure.Step;
 import org.junit.jupiter.api.Test;
 
 import static com.codeborne.selenide.Condition.*;
@@ -9,21 +10,36 @@ public class SelenideAdminLoginNegativeTest extends BaseUITest {
 
     @Test
     void loginWithWrongCredentialsShouldShowError() {
-        // 1. Открываем страницу логина
+        openLoginPage();
+        enterCredentials("wrong_user", "wrong_password");
+        clickSignIn();
+        checkLoginError("Неверные учетные данные пользователя");
+    }
+
+    // ===================== UI steps =====================
+
+    @Step("UI: открыть страницу логина")
+    private void openLoginPage() {
         open("/login");
+    }
 
-        // 2. Вводим неверный логин
-        $("#username").shouldBe(visible).setValue("wrong_user");
+    @Step("UI: ввести логин '{username}' и пароль")
+    private void enterCredentials(String username, String password) {
+        $("#username").shouldBe(visible).setValue(username);
+        $("#password").shouldBe(visible).setValue(password);
+    }
 
-        // 3. Вводим неверный пароль
-        $("#password").shouldBe(visible).setValue("wrong_password");
-
-        // 4. Нажимаем Sign in
+    @Step("UI: нажать Sign in")
+    private void clickSignIn() {
         $("button.primary").shouldBe(visible).click();
+    }
 
-        // 5. Проверяем, что показана ошибка
+    // ===================== UI checks =====================
+
+    @Step("UI-проверка: ошибка логина = '{expectedText}'")
+    private void checkLoginError(String expectedText) {
         $("div.alert.alert-danger")
                 .shouldBe(visible)
-                .shouldHave(exactText("Неверные учетные данные пользователя"));
+                .shouldHave(exactText(expectedText));
     }
 }

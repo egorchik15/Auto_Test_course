@@ -1,3 +1,4 @@
+import io.qameta.allure.Step;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ public class AddProductToCartTest {
     void setUp() {
         driver = new ChromeDriver();
         driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(5));
-        driver.get("http://localhost:8080/");
+        openStore();
     }
 
     @AfterEach
@@ -29,17 +30,40 @@ public class AddProductToCartTest {
 
     @Test
     void productShouldAppearInCart() {
-        // 1. Берём первую карточку товара на витрине
+        String productName = getFirstProductName();
+        addFirstProductToCart();
+        openCart();
+        checkProductInCart(productName);
+    }
+
+    // ===================== UI steps =====================
+
+    @Step("UI: открыть витрину")
+    private void openStore() {
+        driver.get("http://localhost:8080/");
+    }
+
+    @Step("UI: получить название первого товара")
+    private String getFirstProductName() {
         WebElement firstCard = driver.findElement(By.cssSelector("#products-list .product-card"));
-        String productName = firstCard.findElement(By.cssSelector("h4")).getText();
+        return firstCard.findElement(By.cssSelector("h4")).getText();
+    }
 
-        // 2. Нажимаем "В корзину" у этого товара
+    @Step("UI: добавить первый товар в корзину")
+    private void addFirstProductToCart() {
+        WebElement firstCard = driver.findElement(By.cssSelector("#products-list .product-card"));
         firstCard.findElement(By.cssSelector("button[data-action='add-to-cart']")).click();
+    }
 
-        // 3. Открываем корзину
+    @Step("UI: открыть корзину")
+    private void openCart() {
         driver.findElement(By.id("open-cart-btn")).click();
+    }
 
-        // 4. Проверяем, что товар отображается в корзине
+    // ===================== UI checks =====================
+
+    @Step("UI-проверка: товар '{productName}' отображается в корзине")
+    private void checkProductInCart(String productName) {
         List<WebElement> cartItems = driver.findElements(By.cssSelector("#cart-items .cart-item"));
 
         boolean found = false;

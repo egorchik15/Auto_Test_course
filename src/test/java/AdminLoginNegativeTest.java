@@ -1,3 +1,4 @@
+import io.qameta.allure.Step;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,25 +28,46 @@ public class AdminLoginNegativeTest {
 
     @Test
     void loginWithWrongCredentialsShouldShowError() {
-        // 1. Открываем страницу логина
+        openLoginPage();
+        enterWrongCredentials("wrong_user", "wrong_password");
+        clickSignIn();
+        checkLoginErrorIsVisible();
+        checkLoginErrorText("Неверные учетные данные пользователя");
+    }
+
+    // ===================== UI steps =====================
+
+    @Step("UI: открыть страницу логина")
+    private void openLoginPage() {
         driver.get("http://localhost:8080/login");
+    }
 
-        // 2. Вводим неверный логин и пароль
-        driver.findElement(By.id("username")).sendKeys("wrong_user");
-        driver.findElement(By.id("password")).sendKeys("wrong_password");
+    @Step("UI: ввести логин '{username}' и пароль")
+    private void enterWrongCredentials(String username, String password) {
+        driver.findElement(By.id("username")).sendKeys(username);
+        driver.findElement(By.id("password")).sendKeys(password);
+    }
 
-        // 3. Нажимаем Sign in
+    @Step("UI: нажать Sign in")
+    private void clickSignIn() {
         driver.findElement(By.cssSelector("button.primary")).click();
+    }
 
-        // 4. Проверяем сообщение об ошибке
+    // ===================== UI checks =====================
+
+    @Step("UI-проверка: сообщение об ошибке отображается")
+    private void checkLoginErrorIsVisible() {
         WebElement errorMessage = driver.findElement(By.cssSelector("div.alert.alert-danger"));
-
         assertThat(errorMessage.isDisplayed())
                 .as("Сообщение об ошибке должно отображаться")
                 .isTrue();
+    }
 
+    @Step("UI-проверка: текст ошибки = '{expectedText}'")
+    private void checkLoginErrorText(String expectedText) {
+        WebElement errorMessage = driver.findElement(By.cssSelector("div.alert.alert-danger"));
         assertThat(errorMessage.getText())
                 .as("Текст ошибки должен быть корректным")
-                .isEqualTo("Неверные учетные данные пользователя");
+                .isEqualTo(expectedText);
     }
 }

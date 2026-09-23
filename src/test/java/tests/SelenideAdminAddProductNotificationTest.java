@@ -1,5 +1,6 @@
 package tests;
 
+import io.qameta.allure.Step;
 import org.junit.jupiter.api.Test;
 
 import static com.codeborne.selenide.Condition.*;
@@ -12,28 +13,37 @@ public class SelenideAdminAddProductNotificationTest extends BaseUITest {
         String productName = "Admin Notify Product";
         String productPrice = "77";
 
-        // 1. Открыть страницу логина
+        openLoginPage();
+        loginAs("admin", "secret123");
+        createProduct(productName, productPrice);
+        checkProductAddedToast();
+    }
+
+    // ===================== UI steps =====================
+
+    @Step("UI: открыть страницу логина")
+    private void openLoginPage() {
         open("/login");
+    }
 
-        // 2. Ввести логин
-        $("#username").shouldBe(visible).setValue("admin");
-
-        // 3. Ввести пароль
-        $("#password").shouldBe(visible).setValue("secret123");
-
-        // 4. Нажать Sign in
+    @Step("UI: войти как '{username}'")
+    private void loginAs(String username, String password) {
+        $("#username").shouldBe(visible).setValue(username);
+        $("#password").shouldBe(visible).setValue(password);
         $("button.primary").shouldBe(visible).click();
+    }
 
-        // 5. Заполнить название товара
-        $("#n-name").shouldBe(visible).setValue(productName);
-
-        // 6. Заполнить цену
-        $("#n-price").shouldBe(visible).setValue(productPrice);
-
-        // 7. Нажать "Создать"
+    @Step("UI: создать товар name='{name}', price='{price}'")
+    private void createProduct(String name, String price) {
+        $("#n-name").shouldBe(visible).setValue(name);
+        $("#n-price").shouldBe(visible).setValue(price);
         $("#add-btn").shouldBe(visible).click();
+    }
 
-        // 8. Проверить тостер после создания товара
+    // ===================== UI checks =====================
+
+    @Step("UI-проверка: тост «Товар успешно добавлен!»")
+    private void checkProductAddedToast() {
         $(".toast")
                 .shouldBe(visible)
                 .shouldHave(text("Товар успешно добавлен!"));

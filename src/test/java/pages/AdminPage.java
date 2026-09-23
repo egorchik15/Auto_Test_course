@@ -2,6 +2,7 @@ package pages;
 
 import com.codeborne.selenide.SelenideElement;
 import static com.codeborne.selenide.Selenide.*;
+import io.qameta.allure.Step;
 
 public class AdminPage {
 
@@ -26,6 +27,7 @@ public class AdminPage {
         return toast;
     }
 
+    @Step("Ввести название товара '{name}', ввести цену товара '{price}' и нажать кнопку «Создать»")
     public AdminPage createProduct(String name, String price) {
         nameInput.setValue(name);
         priceInput.setValue(price);
@@ -33,6 +35,7 @@ public class AdminPage {
         return this;
     }
 
+    @Step("Отредактировать товар '{originalName}', присвоить новые значения: name='{newName}', price='{newPrice}'")
     public AdminPage editProduct(String originalName, String newName, String newPrice) {
         SelenideElement nameField = $$("input[id^='nm-']")
                 .findBy(com.codeborne.selenide.Condition.value(originalName));
@@ -44,6 +47,7 @@ public class AdminPage {
         return this;
     }
 
+    @Step("Найти id товара по имени '{name}'")
     public String findProductIdByName(String name) {
         return $$("input[id^='nm-']")
                 .findBy(com.codeborne.selenide.Condition.value(name))
@@ -51,6 +55,7 @@ public class AdminPage {
                 .replace("nm-", "");
     }
 
+    @Step("Перейти на витрину")
     public StorePage openStore() {
         open("/");
         return new StorePage();

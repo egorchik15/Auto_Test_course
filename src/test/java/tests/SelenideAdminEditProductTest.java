@@ -1,5 +1,7 @@
 package tests;
 
+import io.qameta.allure.Step;
+import io.qameta.allure.restassured.AllureRestAssured;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -71,17 +73,21 @@ public class SelenideAdminEditProductTest extends BaseUITest {
 
     @AfterEach
     void deleteCreatedProduct() {
-        // Удаляем товар после теста, чтобы следующий запуск был чистым
         if (productId != null) {
-            given()
-                    .auth().basic("admin", "secret123")
-                    .pathParam("id", productId)
-                    .when()
-                    .delete("http://localhost:8080/goods/{id}")
-                    .then()
-                    .statusCode(200);
-
+            deleteGoodsById(productId);
             productId = null;
         }
+    }
+
+    @Step("API: удалить товар id={id}")
+    private void deleteGoodsById(String id) {
+        given()
+                .filter(new AllureRestAssured())
+                .auth().basic("admin", "secret123")
+                .pathParam("id", id)
+                .when()
+                .delete("http://localhost:8080/goods/{id}")
+                .then()
+                .statusCode(200);
     }
 }

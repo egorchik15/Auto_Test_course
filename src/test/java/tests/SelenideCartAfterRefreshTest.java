@@ -1,5 +1,6 @@
 package tests;
 
+import io.qameta.allure.Step;
 import org.junit.jupiter.api.Test;
 
 import static com.codeborne.selenide.Condition.*;
@@ -9,33 +10,51 @@ public class SelenideCartAfterRefreshTest extends BaseUITest {
 
     @Test
     void cartShouldKeepProductsAfterRefresh() {
-        // 1. Открываем витрину
+        openStore();
+        String productName = getFirstProductName();
+        addFirstProductToCart();
+        openCart();
+        checkProductInCart(productName, "до refresh");
+
+        refreshPage();
+        openCart();
+        checkProductInCart(productName, "после refresh");
+    }
+
+    // ===================== UI steps =====================
+
+    @Step("UI: открыть витрину")
+    private void openStore() {
         open("/");
+    }
 
-        // 2. Берем название первого товара
-        String productName = $$("#products-list .product-card").first().$("h4").getText();
+    @Step("UI: получить название первого товара")
+    private String getFirstProductName() {
+        return $$("#products-list .product-card").first().$("h4").getText();
+    }
 
-        // 3. Добавляем товар в корзину
+    @Step("UI: добавить первый товар в корзину")
+    private void addFirstProductToCart() {
         $$("#products-list .product-card").first()
                 .$("[data-action='add-to-cart']")
                 .shouldBe(visible)
                 .click();
+    }
 
-        // 4. Открываем корзину
+    @Step("UI: открыть корзину")
+    private void openCart() {
         $("#open-cart-btn").shouldBe(visible).click();
+    }
 
-        // 5. Проверяем, что товар есть до refresh
-        $$("#cart-items .cart-item")
-                .findBy(text(productName))
-                .shouldBe(visible);
-
-        // 6. Обновляем страницу
+    @Step("UI: обновить страницу")
+    private void refreshPage() {
         refresh();
+    }
 
-        // 7. Снова открываем корзину
-        $("#open-cart-btn").shouldBe(visible).click();
+    // ===================== UI checks =====================
 
-        // 8. Проверяем, что товар остался после refresh
+    @Step("UI-проверка: товар '{productName}' есть в корзине ({stage})")
+    private void checkProductInCart(String productName, String stage) {
         $$("#cart-items .cart-item")
                 .findBy(text(productName))
                 .shouldBe(visible);

@@ -1,5 +1,6 @@
 package tests;
 
+import io.qameta.allure.Step;
 import org.junit.jupiter.api.Test;
 
 import static com.codeborne.selenide.Condition.*;
@@ -9,32 +10,69 @@ public class SelenideCartTotalTest extends BaseUITest {
 
     @Test
     void cartTotalShouldBeCalculatedCorrectly() {
-        // 1. Открыть витрину
+        openStore();
+
+        double price1 = getProductPriceByIndex(0);
+        double price2 = getProductPriceByIndex(1);
+        String expectedTotal = formatPrice(price1 + price2);
+
+        addProductToCartByIndex(0);
+        addProductToCartByIndex(1);
+        openCart();
+
+        checkCartHasAtLeastTwoItems();
+        checkCartTotal(expectedTotal);
+    }
+
+    // ===================== UI steps =====================
+
+    @Step("UI: открыть витрину")
+    private void openStore() {
         open("/");
+    }
 
-        // 2. Взять два разных товара
-        var first = $$("#products-list .product-card").get(0).shouldBe(visible);
-        var second = $$("#products-list .product-card").get(1).shouldBe(visible);
+    @Step("UI: получить цену товара с индексом {index}")
+    private double getProductPriceByIndex(int index) {
+        var card = $$("#products-list .product-card").get(index).shouldBe(visible);
+        return Double.parseDouble(card.getAttribute("data-price"));
+    }
 
-        // 3. Прочитать цены из data-price
-        double price1 = Double.parseDouble(first.getAttribute("data-price"));
-        double price2 = Double.parseDouble(second.getAttribute("data-price"));
-        int expectedTotal = (int) (price1 + price2);
+    @Step("UI: добавить товар с индексом {index} в корзину")
+    private void addProductToCartByIndex(int index) {
+        $$("#products-list .product-card")
+                .get(index)
+                .shouldBe(visible)
+                .$("[data-action='add-to-cart']")
+                .shouldBe(visible)
+                .click();
+    }
 
-        // 4. Добавить оба товара в корзину
-        first.$("[data-action='add-to-cart']").shouldBe(visible).click();
-        second.$("[data-action='add-to-cart']").shouldBe(visible).click();
-
-        // 5. Открыть корзину
+    @Step("UI: открыть корзину")
+    private void openCart() {
         $("#open-cart-btn").shouldBe(visible).click();
+    }
 
-        // 6. Проверить, что оба товара отображаются в корзине
+    // ===================== UI checks =====================
+
+    @Step("UI-проверка: в корзине есть минимум 2 товара")
+    private void checkCartHasAtLeastTwoItems() {
         $$("#cart-items .cart-item").get(0).shouldBe(visible);
         $$("#cart-items .cart-item").get(1).shouldBe(visible);
+    }
 
-        // 7. Проверить, что сумма в #total-price посчитана корректно
+    @Step("UI-проверка: сумма корзины = {expectedTotal}")
+    private void checkCartTotal(String expectedTotal) {
         $("#total-price")
                 .shouldBe(visible)
-                .shouldHave(exactText(String.valueOf(expectedTotal)));
+                .shouldHave(exactText(expectedTotal));
+    }
+
+    // ===================== helpers =====================
+
+    private String formatPrice(double value) {
+        if (value == Math.rint(value)) {
+            return String.valueOf((long) value);
+        }
+        return String.valueOf(value);
     }
 }
